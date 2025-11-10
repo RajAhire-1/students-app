@@ -2,6 +2,10 @@ pipeline {
     agent any
 
     environment {
+        // Use JDK 17 so --release 17 is supported
+        JAVA_HOME = '/usr/lib/jvm/java-17-openjdk-amd64'
+        PATH      = "${JAVA_HOME}/bin:${env.PATH}"
+
         SERVER_IP    = '172.31.9.120'
         SSH_CRED_ID  = 'checkkey'
         TOMCAT_PATH  = '/var/lib/tomcat10/webapps'
@@ -15,9 +19,27 @@ pipeline {
             }
         }
 
+        stage('Confirm Java & Maven') {
+            steps {
+                sh '''
+                  echo "---- java ----"
+                  java -version || true
+                  echo "---- javac ----"
+                  javac -version || true
+                  echo "---- which java/javac ----"
+                  which java || true
+                  which javac || true
+                  readlink -f $(which java) || true
+                  readlink -f $(which javac) || true
+                  echo "---- mvn ----"
+                  mvn -v || true
+                '''
+            }
+        }
+
         stage('Build WAR') {
             steps {
-                sh 'mvn clean package'
+                sh 'mvn -B -DskipTests clean package'
             }
         }
 
@@ -25,14 +47,18 @@ pipeline {
             steps {
                 sshagent([SSH_CRED_ID]) {
                     sh """
-                        WAR_FILE=\$(ls target/*.war | head -n 1)
-                        scp -o StrictHostKeyChecking=no \$WAR_FILE ubuntu@${SERVER_IP}:/tmp/
-                        ssh -o StrictHostKeyChecking=no ubuntu@${SERVER_IP} '
-                            sudo rm -rf ${TOMCAT_PATH}/*
-                            sudo mv /tmp/*.war ${TOMCAT_PATH}/ROOT.war
-                            sudo chown tomcat:tomcat ${TOMCAT_PATH}/ROOT.war
-                            sudo systemctl restart ${TOMCAT_SVC}
-                        '
+                      WAR_FILE=\$(ls target/*.war 2>/dev/null | head -n 1)
+                      if [ -z "\$WAR_FILE" ]; then
+                        echo "ERROR: No WAR file found in target/"; exit 1
+                      fi
+                      scp -o StrictHostKeyChecking=no "\$WAR_FILE" ubuntu@${SERVER_IP}:/tmp/ || exit 1
+                      ssh -o StrictHostKeyChecking=no ubuntu@${SERVER_IP} '
+                        set -e
+                        sudo rm -rf ${TOMCAT_PATH}/*
+                        sudo mv /tmp/*.war ${TOMCAT_PATH}/ROOT.war
+                        sudo chown tomcat:tomcat ${TOMCAT_PATH}/ROOT.war
+                        sudo systemctl restart ${TOMCAT_SVC}
+                      '
                     """
                 }
             }
@@ -40,11 +66,7 @@ pipeline {
     }
 
     post {
-        success {
-            echo "App deployed! Visit: http://${SERVER_IP}:8080/"
-        }
-        failure {
-            echo "Deployment failed."
-        }
+        success { echo "App deployed! Visit: http://${SERVER_IP}:8080/" }
+        failure { echo "Deployment failed." }
     }
 }

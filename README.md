@@ -2,8 +2,6 @@
 
 This repository demonstrates a **Java-based Student Management Web Application** deployed through a fully automated **CI/CD pipeline** using **Git, GitHub, Jenkins, AWS EC2, Maven, and Apache Tomcat**.
 
-The project showcases an end-to-end DevOps workflow — automating everything from **code integration** to **deployment** — ensuring consistent, reliable, and fast software delivery.
-
 ---
 
 ## 1. Project Overview

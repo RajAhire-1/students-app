@@ -12,6 +12,7 @@ The **Student Management Application** allows users to input and manage student 
 
 This project highlights **Continuous Integration and Continuous Deployment (CI/CD)** using Jenkins and AWS infrastructure to automate the deployment process of Java applications.
 
+![](img/overvieww.png)
 ---
 
 ### Jenkins Credentials Setup
@@ -197,7 +198,4 @@ GitHub: [https://github.com/RajAhire-1](https://github.com/RajAhire-1)
 
 ---
 
-## 12. Conclusion
-
-This project demonstrates a fully automated **DevOps pipeline** integrating **Git, GitHub, Jenkins, Maven, AWS EC2, and Apache Tomcat** for a real-world **Java web application deployment**.
 
